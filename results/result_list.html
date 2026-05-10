@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}All Results{% endblock %}
+{% block page_title %}All Results{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>Academic Results</h1>
+  <p>{{ total }} total result(s) — use filters to narrow down.</p>
+</div>
+
+<!-- Filters -->
+<div class="form-card mb-4 fade-up fade-up-2">
+  <form method="get" id="filterForm" class="row g-3 align-items-end">
+    <div class="col-sm-6 col-lg-2">
+      <label class="form-label">Semester</label>
+      {{ form.semester }}
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <label class="form-label">Subject</label>
+      {{ form.subject }}
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <label class="form-label">Batch</label>
+      {{ form.batch }}
+    </div>
+    <div class="col-sm-6 col-lg-2">
+      <label class="form-label">Grade</label>
+      {{ form.grade }}
+    </div>
+    <div class="col-lg-2 d-flex gap-2">
+      <button type="submit" class="btn btn-primary flex-grow-1">
+        <i class="bi bi-funnel"></i> Filter
+      </button>
+      <a href="{% url 'results:result_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-x"></i>
+      </a>
+    </div>
+  </form>
+</div>
+
+<!-- Actions bar -->
+<div class="d-flex gap-2 mb-3 flex-wrap fade-up fade-up-3">
+  <a href="{% url 'results:result_create' %}" class="btn btn-sm btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Add Result
+  </a>
+  <a href="{% url 'results:upload' %}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-upload me-1"></i>Upload CSV
+  </a>
+  <a href="{% url 'results:export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
+    <i class="bi bi-filetype-csv me-1"></i>Export CSV
+  </a>
+  <a href="{% url 'results:export_pdf' %}" class="btn btn-sm btn-outline-danger">
+    <i class="bi bi-file-pdf me-1"></i>Export PDF
+  </a>
+</div>
+
+<!-- Results table -->
+<div class="table-card fade-up fade-up-3">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Roll No.</th>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Sem</th>
+          <th>Marks</th>
+          <th>Grade</th>
+          <th>Status</th>
+          <th>Batch</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for result in page_obj %}
+        <tr>
+          <td class="text-muted small">{{ forloop.counter0|add:page_obj.start_index }}</td>
+          <td><code>{{ result.student.profile.roll_number|default:"—" }}</code></td>
+          <td class="fw-500">{{ result.student.get_full_name|default:result.student.username }}</td>
+          <td>
+            <span class="fw-500">{{ result.subject.name }}</span>
+            <div class="text-muted small">{{ result.subject.code }}</div>
+          </td>
+          <td>{{ result.semester }}</td>
+          <td>
+            <span class="fw-700">{{ result.marks_obtained }}</span>
+            <div class="perf-bar-wrap mt-1" style="width:60px">
+              <div class="perf-bar" style="width:{{ result.marks_obtained }}%"></div>
+            </div>
+          </td>
+          <td><span class="grade-badge grade-{{ result.grade }}">{{ result.grade }}</span></td>
+          <td>
+            <span class="badge {% if result.is_pass %}bg-success{% else %}bg-danger{% endif %}">
+              {% if result.is_pass %}Pass{% else %}Fail{% endif %}
+            </span>
+          </td>
+          <td class="text-muted small">{{ result.batch.name }}</td>
+          <td class="text-muted small">{{ result.upload_date|date:"M d, Y" }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{% url 'results:result_edit' result.pk %}" class="btn btn-xs btn-outline-secondary" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              {% if request.user.profile.is_admin or request.user.is_superuser %}
+              <a href="{% url 'results:result_delete' result.pk %}" class="btn btn-xs btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+              </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11" class="text-center text-muted py-5">
+            <i class="bi bi-search display-6 d-block mb-2"></i>
+            No results match your filters.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="d-flex justify-content-center py-3">
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}&{{ request.GET.urlencode }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.btn-xs { padding: 2px 8px; font-size: 12px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>EduPulse.bindFilterForm('filterForm');</script>
+{% endblock %}

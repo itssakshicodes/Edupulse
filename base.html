@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}EduPulse{% endblock %} | Academic Intelligence Platform</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link href="/static/css/main.css" rel="stylesheet">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+
+
+{% if user.is_authenticated %}
+<!-- ══════════════════════════ SIDEBAR ══════════════════════════ -->
+<div class="sidebar" id="sidebar">
+  <!-- Brand -->
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="bi bi-graph-up-arrow"></i></div>
+    <div class="brand-text">
+      <span class="brand-name">EduPulse</span>
+      <span class="brand-tagline">Academic Intelligence</span>
+    </div>
+  </div>
+
+  <!-- User pill -->
+  <div class="sidebar-user">
+    <div class="user-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+    <div class="user-info">
+      <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+      <div class="user-role badge-role-{{ user.profile.role|default:'student' }}">
+        {{ user.profile.get_role_display|default:'Student' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+
+<a href="{% url 'core:dashboard' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">      <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+    </a>
+
+    {% with role=user.profile.role %}
+
+    {% if role == 'admin' or role == 'faculty' or role == 'hod' %}
+    <div class="nav-section-label">Results</div>
+
+    {% if role == 'admin' or role == 'faculty' %}
+<a href="{% url 'results:upload' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'upload' %}active{% endif %}">      <i class="bi bi-cloud-upload"></i><span>Upload Results</span>
+    </a>
+<a href="{% url 'results:result_create' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'result_create' %}active{% endif %}">      <i class="bi bi-plus-circle"></i><span>Add Result</span>
+    </a>
+    {% endif %}
+
+    <a href="{% url 'results:result_list' %}" class="nav-item {% if request.resolver_match.url_name == 'result_list' %}active{% endif %}">
+      <i class="bi bi-table"></i><span>All Results</span>
+    </a>
+
+    <div class="nav-section-label">Analytics</div>
+<a href="{% url 'analytics:institution' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'institution' %}active{% endif %}">      <i class="bi bi-bar-chart-line"></i><span>Institution Analytics</span>
+    </a>
+<a href="{% url 'analytics:subjects' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'subjects' %}active{% endif %}">      <i class="bi bi-pie-chart"></i><span>Subject Analysis</span>
+    </a>
+    {% endif %}
+
+    {% if role == 'student' %}
+    <div class="nav-section-label">My Performance</div>
+    <a href="{% url 'analytics:student' %}" class="nav-item">
+      <i class="bi bi-person-lines-fill"></i><span>My Dashboard</span>
+    </a>
+    <a href="{% url 'results:export_pdf' %}" class="nav-item">
+      <i class="bi bi-file-earmark-pdf"></i><span>Download Report</span>
+    </a>
+    {% endif %}
+
+    {% if role == 'admin' %}
+    <div class="nav-section-label">Administration</div>
+    <a href="{% url 'accounts:user_list' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}">     
+    <i class="bi bi-people"></i><span>Manage Users</span>
+    </a>
+   <a href="{% url 'results:subject_list' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'subject_list' %}active{% endif %}">
+  <i class="bi bi-book"></i><span>Subjects</span>
+</a>
+
+  <a href="{% url 'results:batch_list' %}"
+    class="nav-item {% if request.resolver_match.url_name == 'batch_list' %}active{% endif %}">
+    <i class="bi bi-collection"></i><span>Batches</span>
+  </a>
+
+  <a href="{% url 'results:upload_logs' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'upload_logs' %}active{% endif %}">
+  <i class="bi bi-journal-text"></i><span>Upload Logs</span>
+  </a>
+    <a href="/admin/" target="_blank" class="nav-item">
+  <i class="bi bi-gear"></i><span>Django Admin</span>
+</a>
+    {% endif %}
+
+    {% endwith %}
+
+    <div class="nav-section-label">Account</div>
+  <a href="{% url 'accounts:profile' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">      <i class="bi bi-person-circle"></i><span>Profile</span>
+    </a>
+    <a href="{% url 'accounts:logout' %}" class="nav-item nav-item-danger">
+      <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+    </a>
+  </nav>
+</div>
+
+<!-- ══════════════════════════ MAIN CONTENT ══════════════════════════ -->
+<div class="main-wrapper" id="mainWrapper">
+  <!-- Top bar -->
+  <header class="topbar">
+    <button class="sidebar-toggle" id="sidebarToggle">
+      <i class="bi bi-list"></i>
+    </button>
+    <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+    <div class="topbar-actions">
+      <span class="text-muted small me-3 d-none d-md-inline">
+        <i class="bi bi-calendar3 me-1"></i>{% now "N j, Y" %}
+      </span>
+      <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-person"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  {% if messages %}
+  <div class="px-4 pt-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Page content -->
+  <main class="content-area">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="content-footer">
+    <span>© 2026 EduPulse — Academic Intelligence Platform</span>
+    <span class="ms-auto text-muted">Built with Django & Bootstrap 5</span>
+  </footer>
+</div>
+
+{% else %}
+<!-- Not authenticated — full-page layout -->
+<main>{% block auth_content %}{% endblock %}</main>
+{% endif %}
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Google Charts -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<!-- Custom JS -->
+<script src="/static/js/main.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

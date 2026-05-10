@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}My Analytics{% endblock %}
+{% block page_title %}My Performance Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>My Analytics</h1>
+  <p>Detailed breakdown of your academic performance.</p>
+</div>
+
+<div class="row g-3 mb-4 fade-up fade-up-2">
+  <div class="col-lg-8">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-graph-up me-2 text-primary"></i>My Semester Trend</div>
+      </div>
+      <div id="chart-trend" style="height:300px"></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-pie-chart me-2 text-primary"></i>Pass vs Fail</div>
+      </div>
+      <div style="padding:8px 0">
+        <div class="text-center mb-3">
+          <div style="font-size:40px;font-weight:700;color:var(--navy)">{{ passes }}/{{ total }}</div>
+          <div class="text-muted small">Subjects Passed</div>
+        </div>
+        {% if total %}
+        <div class="perf-bar-wrap" style="height:12px;border-radius:6px">
+          <div class="perf-bar" style="width:{% widthratio passes total 100 %}%;height:100%;border-radius:6px"></div>
+        </div>
+        <div class="d-flex justify-content-between small mt-1">
+          <span class="text-success fw-600">{{ passes }} Passed</span>
+          <span class="text-danger fw-600">{{ total|add:passes|add:"-2*passes" }} Failed</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Semester cards -->
+<div class="row g-3 mb-4 fade-up fade-up-3">
+  {% for sem in avg_by_sem %}
+  <div class="col-sm-6 col-md-4 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon {% if sem.avg >= 75 %}green{% elif sem.avg >= 50 %}amber{% else %}red{% endif %}">
+        <i class="bi bi-{% if sem.avg >= 75 %}emoji-smile{% elif sem.avg >= 50 %}emoji-neutral{% else %}emoji-frown{% endif %}"></i>
+      </div>
+      <div>
+        <div class="stat-label">Semester {{ sem.semester }}</div>
+        <div class="stat-value">{{ sem.avg }}</div>
+        <div class="stat-sub">Average marks</div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center text-muted py-4">No results available yet.</div>
+  {% endfor %}
+</div>
+
+<div class="d-flex gap-2 mt-2 fade-up fade-up-4">
+  <a href="{% url 'results:export_pdf' %}" class="btn btn-primary">
+    <i class="bi bi-file-pdf me-2"></i>Download Full PDF Report
+  </a>
+  <a href="{% url 'results:export_csv' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-filetype-csv me-2"></i>Download CSV
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  EduPulse.loadChart("{% url 'analytics:chart_student_trend' %}", 'chart-trend', 'LineChart', {
+    curveType: 'function',
+    pointSize: 8,
+    vAxis: { minValue: 0, maxValue: 100, title: 'Marks' },
+    hAxis: { title: 'Semester' },
+    colors: ['#00b4d8'],
+  });
+</script>
+{% endblock %}

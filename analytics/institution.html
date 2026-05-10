@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Institution Analytics{% endblock %}
+{% block page_title %}Institution Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>Institution Analytics</h1>
+  <p>Deep-dive performance data across all departments, batches, and semesters.</p>
+</div>
+
+<!-- Summary pills -->
+<div class="row g-3 mb-4 fade-up fade-up-2">
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-people"></i></div>
+      <div>
+        <div class="stat-label">Active Students</div>
+        <div class="stat-value">{{ total_students }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="bi bi-percent"></i></div>
+      <div>
+        <div class="stat-label">Pass Rate</div>
+        <div class="stat-value">{{ pass_rate }}%</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon navy"><i class="bi bi-bar-chart-line"></i></div>
+      <div>
+        <div class="stat-label">Avg Marks</div>
+        <div class="stat-value">{{ avg_marks }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Smart Filters -->
+<div class="form-card mb-4 fade-up fade-up-2">
+  <form method="get" id="analyticsFilter" class="row g-3 align-items-end">
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label fw-600 small">Semester</label>
+      <select name="semester" class="form-select" onchange="refreshCharts()">
+        <option value="">All Semesters</option>
+        {% for i in "12345678"|make_list %}
+        <option value="{{ i }}" {% if request.GET.semester == i %}selected{% endif %}>Semester {{ i }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label fw-600 small">Batch</label>
+      <select name="batch" class="form-select" onchange="refreshCharts()">
+        <option value="">All Batches</option>
+        {% for b in batches %}
+        <option value="{{ b.id }}" {% if request.GET.batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label fw-600 small">Subject</label>
+      <select name="subject" class="form-select" onchange="refreshCharts()">
+        <option value="">All Subjects</option>
+        {% for s in subjects %}
+        <option value="{{ s.id }}" {% if request.GET.subject == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i>Apply Filters</button>
+    </div>
+  </form>
+</div>
+
+<!-- Chart Grid -->
+<div class="row g-3 mb-4 fade-up fade-up-3">
+  <!-- Pie: Pass / Fail -->
+  <div class="col-lg-4">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-pie-chart me-2 text-primary"></i>Pass vs Fail</div>
+        <span class="badge bg-light text-muted border small">
+          {{ pass_count }} / {{ total_results }}
+        </span>
+      </div>
+      <div id="chart-pf" style="height:280px"></div>
+    </div>
+  </div>
+
+  <!-- Column: Grade distribution -->
+  <div class="col-lg-8">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-bar-chart me-2 text-primary"></i>Grade Distribution</div>
+      </div>
+      <div id="chart-grade" style="height:280px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4 fade-up fade-up-4">
+  <!-- Line: Semester Trend -->
+  <div class="col-lg-7">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-graph-up me-2 text-primary"></i>Semester Performance Trend</div>
+      </div>
+      <div id="chart-trend" style="height:280px"></div>
+    </div>
+  </div>
+
+  <!-- Scatter: Individual students -->
+  <div class="col-lg-5">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-diagram-3 me-2 text-primary"></i>Student Scatter</div>
+      </div>
+      <div id="chart-scatter" style="height:280px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Bar: Subject comparison -->
+<div class="row g-3 mb-4 fade-up fade-up-4">
+  <div class="col-12">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-list-ol me-2 text-primary"></i>Subject Comparison — Average Marks</div>
+      </div>
+      <div id="chart-subj" style="height:320px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Export actions -->
+<div class="d-flex gap-2 mb-4 fade-up fade-up-4">
+  <a href="{% url 'results:export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success">
+    <i class="bi bi-filetype-csv me-2"></i>Export Filtered CSV
+  </a>
+  <a href="{% url 'results:export_pdf' %}" class="btn btn-outline-danger">
+    <i class="bi bi-file-pdf me-2"></i>Generate PDF Report
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function getFilterParams() {
+    const form = document.getElementById('analyticsFilter');
+    return new URLSearchParams(new FormData(form)).toString();
+  }
+
+  function refreshCharts() {
+    const p = getFilterParams();
+    EduPulse.loadChart("/analytics/chart/pass-fail/?"          + p, 'chart-pf',     'PieChart',    {pieHole: 0.4});
+    EduPulse.loadChart("/analytics/chart/grade-distribution/?" + p, 'chart-grade',  'ColumnChart', {});
+    EduPulse.loadChart("/analytics/chart/semester-trend/?"     + p, 'chart-trend',  'LineChart',   {curveType:'function', pointSize:5});
+    EduPulse.loadChart("/analytics/chart/scatter/?"            + p, 'chart-scatter','ScatterChart',{pointSize:5, legend:'none'});
+    EduPulse.loadChart("/analytics/chart/subject-comparison/?" + p, 'chart-subj',   'BarChart',    {});
+  }
+
+  // Initial load
+  refreshCharts();
+</script>
+{% endblock %}

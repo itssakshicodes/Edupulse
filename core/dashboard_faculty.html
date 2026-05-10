@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Faculty Dashboard{% endblock %}
+{% block page_title %}Faculty Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>Welcome, {{ request.user.get_full_name|default:request.user.username }} 👋</h1>
+  <p>Your subject performance overview.</p>
+</div>
+
+<div class="row g-3 mb-4 fade-up fade-up-2">
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-upload"></i></div>
+      <div>
+        <div class="stat-label">Results Uploaded</div>
+        <div class="stat-value">{{ total_uploaded }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon navy"><i class="bi bi-book"></i></div>
+      <div>
+        <div class="stat-label">Subjects</div>
+        <div class="stat-value">{{ subjects|length }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon amber"><i class="bi bi-graph-up"></i></div>
+      <div>
+        <div class="stat-label">Analytics Ready</div>
+        <div class="stat-value">Live</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Subject performance table -->
+<div class="table-card mb-4 fade-up fade-up-3">
+  <div class="table-card-header">
+    <div class="table-card-title"><i class="bi bi-book me-2"></i>Subject Performance</div>
+    <a href="{% url 'results:upload' %}" class="btn btn-sm btn-primary">
+      <i class="bi bi-upload me-1"></i>Upload Results
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>Code</th><th>Subject</th><th>Semester</th><th>Results</th><th>Avg Marks</th><th>Pass Rate</th></tr>
+      </thead>
+      <tbody>
+        {% for subj in subjects %}
+        <tr>
+          <td><code>{{ subj.code }}</code></td>
+          <td class="fw-500">{{ subj.name }}</td>
+          <td>{{ subj.semester }}</td>
+          <td>{{ subj.total_results|default:0 }}</td>
+          <td>
+            {% if subj.avg_marks %}
+            <span class="fw-600">{{ subj.avg_marks|floatformat:1 }}</span>
+            <div class="perf-bar-wrap mt-1" style="width:80px">
+              <div class="perf-bar" style="width:{{ subj.avg_marks }}%"></div>
+            </div>
+            {% else %}&mdash;{% endif %}
+          </td>
+          <td>
+            {% if subj.total_results %}
+            {% widthratio subj.pass_count subj.total_results 100 as rate %}
+            <span class="badge {% if rate|add:0 >= 75 %}bg-success{% elif rate|add:0 >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+              {{ rate }}%
+            </span>
+            {% else %}&mdash;{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No subjects found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4 fade-up fade-up-4">
+  <div class="col-lg-6">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">Subject Comparison</div>
+      </div>
+      <div id="chart-subjects" style="height:280px"></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">Grade Distribution</div>
+      </div>
+      <div id="chart-grades" style="height:280px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent uploads by this faculty -->
+<div class="table-card fade-up fade-up-4">
+  <div class="table-card-header">
+    <div class="table-card-title"><i class="bi bi-clock-history me-2"></i>My Recent Uploads</div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Student</th><th>Subject</th><th>Marks</th><th>Grade</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for r in recent_results %}
+        <tr>
+          <td>{{ r.student.get_full_name|default:r.student.username }}</td>
+          <td>{{ r.subject.name }}</td>
+          <td class="fw-600">{{ r.marks_obtained }}</td>
+          <td><span class="grade-badge grade-{{ r.grade }}">{{ r.grade }}</span></td>
+          <td><span class="badge {% if r.is_pass %}bg-success{% else %}bg-danger{% endif %}">{% if r.is_pass %}Pass{% else %}Fail{% endif %}</span></td>
+          <td class="text-muted small">{{ r.upload_date|date:"M d" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No results uploaded yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  EduPulse.loadChart("{% url 'analytics:chart_subject_comparison' %}", 'chart-subjects', 'BarChart',    {});
+  EduPulse.loadChart("{% url 'analytics:chart_grade_distribution' %}", 'chart-grades',   'ColumnChart', {});
+</script>
+{% endblock %}

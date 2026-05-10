@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>Welcome back, {{ request.user.get_full_name|default:request.user.username }} 👋</h1>
+  <p>Here's the institution overview for today.</p>
+</div>
+
+<!-- ── Stat Cards ─────────────────────────────────────────────── -->
+<div class="row g-3 mb-4 fade-up fade-up-2">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon navy"><i class="bi bi-people-fill"></i></div>
+      <div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">{{ total_users }}</div>
+        <div class="stat-sub">All roles combined</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-file-earmark-bar-graph"></i></div>
+      <div>
+        <div class="stat-label">Total Results</div>
+        <div class="stat-value">{{ total_results }}</div>
+        <div class="stat-sub">Across all batches</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+      <div>
+        <div class="stat-label">Passed</div>
+        <div class="stat-value">{{ pass_count }}</div>
+        <div class="stat-sub">Results above pass mark</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon red"><i class="bi bi-x-circle-fill"></i></div>
+      <div>
+        <div class="stat-label">Failed</div>
+        <div class="stat-value">{{ fail_count }}</div>
+        <div class="stat-sub">Needs attention</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Second row: subjects, batches, role pills ──────────────── -->
+<div class="row g-3 mb-4 fade-up fade-up-3">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon amber"><i class="bi bi-book-fill"></i></div>
+      <div>
+        <div class="stat-label">Subjects</div>
+        <div class="stat-value">{{ total_subjects }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon navy"><i class="bi bi-collection-fill"></i></div>
+      <div>
+        <div class="stat-label">Batches</div>
+        <div class="stat-value">{{ total_batches }}</div>
+      </div>
+    </div>
+  </div>
+  <!-- Role distribution -->
+  <div class="col-xl-6">
+    <div class="stat-card flex-wrap gap-3">
+       {% for key, count in role_counts.items %}
+      <div class="text-center">
+        <div class="stat-value" style="font-size:22px">
+          {{ count|default:0 }}
+        </div>
+        <div class="badge-role-{{ key }} mt-1" style="display:inline-block">
+          {{ key|capfirst }}
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Charts Row ─────────────────────────────────────────────── -->
+<div class="row g-3 mb-4 fade-up fade-up-4">
+  <div class="col-lg-4">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-pie-chart me-2 text-primary"></i>Pass vs Fail</div>
+      </div>
+      <div id="chart-pass-fail" class="chart-container" style="height:260px"></div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-bar-chart me-2 text-primary"></i>Grade Distribution</div>
+      </div>
+      <div id="chart-grade-dist" class="chart-container" style="height:260px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4 fade-up fade-up-4">
+  <div class="col-lg-7">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-graph-up me-2 text-primary"></i>Semester Trend</div>
+      </div>
+      <div id="chart-trend" class="chart-container" style="height:260px"></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-scatter-chart me-2 text-primary"></i>Student Scatter</div>
+      </div>
+      <div id="chart-scatter" class="chart-container" style="height:260px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Recent Upload Logs ──────────────────────────────────────── -->
+<div class="table-card mb-4 fade-up fade-up-4">
+  <div class="table-card-header">
+    <div class="table-card-title"><i class="bi bi-clock-history me-2"></i>Recent Uploads</div>
+    <a href="{% url 'results:upload_logs' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>File</th><th>By</th><th>Total</th><th>Success</th><th>Errors</th><th>Status</th><th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_logs %}
+        <tr>
+          <td class="fw-500">{{ log.file_name }}</td>
+          <td>{{ log.uploaded_by.username|default:"—" }}</td>
+          <td>{{ log.total_rows }}</td>
+          <td class="text-success fw-600">{{ log.success_rows }}</td>
+          <td class="text-danger fw-600">{{ log.error_rows }}</td>
+          <td>
+            <span class="badge {% if log.status == 'success' %}bg-success{% elif log.status == 'partial' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+              {{ log.status|capfirst }}
+            </span>
+          </td>
+          <td class="text-muted small">{{ log.uploaded_at|date:"M d, H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No uploads yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Quick actions -->
+<div class="row g-3 mb-4 fade-up fade-up-4">
+  <div class="col-12"><h6 class="text-muted fw-600 text-uppercase" style="letter-spacing:1px">Quick Actions</h6></div>
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'results:upload' %}" class="btn btn-primary w-100 py-3">
+      <i class="bi bi-cloud-upload d-block mb-1" style="font-size:20px"></i>Upload Results
+    </a>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'accounts:user_create' %}" class="btn btn-outline-primary w-100 py-3">
+      <i class="bi bi-person-plus d-block mb-1" style="font-size:20px"></i>Add User
+    </a>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'results:subject_create' %}" class="btn btn-outline-secondary w-100 py-3">
+      <i class="bi bi-book d-block mb-1" style="font-size:20px"></i>Add Subject
+    </a>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'results:export_csv' %}" class="btn btn-outline-success w-100 py-3">
+      <i class="bi bi-download d-block mb-1" style="font-size:20px"></i>Export CSV
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  EduPulse.loadChart("{% url 'analytics:chart_pass_fail' %}",          'chart-pass-fail', 'PieChart',    {pieHole: 0.4});
+  EduPulse.loadChart("{% url 'analytics:chart_grade_distribution' %}", 'chart-grade-dist','ColumnChart', {});
+  EduPulse.loadChart("{% url 'analytics:chart_semester_trend' %}",     'chart-trend',     'LineChart',   {curveType:'function'});
+  EduPulse.loadChart("{% url 'analytics:chart_scatter' %}",            'chart-scatter',   'ScatterChart',{pointSize:5});
+</script>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Upload Results{% endblock %}
+{% block page_title %}Upload Results{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>Upload Academic Results</h1>
+  <p>Import student results via CSV or Excel. Errors are shown before saving.</p>
+</div>
+
+<div class="row g-4 fade-up fade-up-2">
+  <!-- Upload form -->
+  <div class="col-lg-6">
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-cloud-upload me-2 text-primary"></i>Select File</div>
+
+      <form method="post" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+
+        <!-- Drag-drop zone -->
+        <div class="upload-zone mb-3">
+          <div class="upload-zone-icon"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+          <div class="fw-600 mb-1">Drag & drop your file here</div>
+          <div class="text-muted small mb-3">or click to browse</div>
+          <div class="upload-zone-name text-primary fw-500 small">No file selected</div>
+        </div>
+
+        {{ form.file }}
+        {% if form.file.errors %}
+        <div class="text-danger small mb-2">{{ form.file.errors.0 }}</div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary w-100 mt-3 btn-lg">
+          <i class="bi bi-upload me-2"></i>Upload & Validate
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Instructions panel -->
+  <div class="col-lg-6">
+    <div class="form-card h-100">
+      <div class="form-card-title"><i class="bi bi-info-circle me-2 text-info"></i>File Format Guide</div>
+
+      <p class="text-muted small mb-3">Your CSV / Excel must contain these columns (exact names):</p>
+
+      <div class="table-responsive mb-3">
+        <table class="table table-sm table-bordered">
+          <thead class="table-dark">
+            <tr><th>Column</th><th>Required</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>roll_number</code></td>  <td><span class="badge bg-danger">Yes</span></td><td>CS2021001</td></tr>
+            <tr><td><code>subject_code</code></td> <td><span class="badge bg-danger">Yes</span></td><td>CS301</td></tr>
+            <tr><td><code>semester</code></td>     <td><span class="badge bg-danger">Yes</span></td><td>3</td></tr>
+            <tr><td><code>batch_name</code></td>   <td><span class="badge bg-danger">Yes</span></td><td>2021-2025</td></tr>
+            <tr><td><code>marks_obtained</code></td><td><span class="badge bg-danger">Yes</span></td><td>78.5</td></tr>
+            <tr><td><code>remarks</code></td>      <td><span class="badge bg-secondary">No</span></td><td>Good</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-info py-2 px-3 small">
+        <i class="bi bi-lightbulb me-1"></i>
+        <strong>Tip:</strong> Grades and pass/fail are calculated <em>automatically</em> — don't include them in the file.
+      </div>
+
+      <div class="alert alert-warning py-2 px-3 small">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        <strong>Duplicate entries</strong> (same student + subject + semester + batch) will be skipped.
+      </div>
+
+      <a href="/static/sample_results.csv" class="btn btn-outline-secondary btn-sm w-100">
+        <i class="bi bi-download me-1"></i>Download Sample CSV
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Success count -->
+{% if success_count %}
+<div class="alert alert-success mt-4 fade-up">
+  <i class="bi bi-check-circle-fill me-2"></i>
+  <strong>{{ success_count }}</strong> result(s) imported successfully.
+</div>
+{% endif %}
+
+<!-- Error report -->
+{% if preview_errors %}
+<div class="mt-4 fade-up">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-exclamation-circle-fill text-danger fs-5"></i>
+    <h5 class="mb-0 fw-700 text-danger">Import Errors — {{ preview_errors|length }} row(s) failed</h5>
+  </div>
+
+  <div style="max-height:400px; overflow-y:auto">
+    {% for err in preview_errors %}
+    <div class="error-item">
+      <div class="error-row-num mb-1"><i class="bi bi-hash"></i> Row {{ err.row }}</div>
+      <div class="error-msg">
+        {% for e in err.errors %}
+        <span class="badge bg-danger me-1 mb-1">{{ e }}</span>
+        {% endfor %}
+      </div>
+      {% if err.data %}
+      <details class="mt-2">
+        <summary class="small text-muted" style="cursor:pointer">View row data</summary>
+        <code class="small d-block mt-1 text-muted">{{ err.data }}</code>
+      </details>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Upload log link -->
+<div class="mt-4 text-end fade-up">
+  <a href="{% url 'results:upload_logs' %}" class="text-muted small">
+    <i class="bi bi-clock-history me-1"></i>View all upload history
+  </a>
+</div>
+{% endblock %}

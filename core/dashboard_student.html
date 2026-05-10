@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+{% block page_title %}My Academic Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>My Performance 🎓</h1>
+  <p>Track your academic progress across all semesters.</p>
+</div>
+
+<!-- Summary cards -->
+<div class="row g-3 mb-4 fade-up fade-up-2">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-file-text"></i></div>
+      <div>
+        <div class="stat-label">Total Subjects</div>
+        <div class="stat-value">{{ total }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="bi bi-check2-all"></i></div>
+      <div>
+        <div class="stat-label">Passed</div>
+        <div class="stat-value">{{ passes }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon red"><i class="bi bi-x-lg"></i></div>
+      <div>
+        <div class="stat-label">Failed</div>
+        <div class="stat-value">{{ fails }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon navy"><i class="bi bi-award"></i></div>
+      <div>
+        <div class="stat-label">CGPA (est.)</div>
+        <div class="stat-value">{{ cgpa }}</div>
+        <div class="stat-sub">Avg {{ avg_marks }} marks</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Trend chart + semester table -->
+<div class="row g-3 mb-4 fade-up fade-up-3">
+  <div class="col-lg-7">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-graph-up me-2"></i>My Performance Trend</div>
+      </div>
+      <div id="chart-my-trend" style="height:280px"></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="table-card h-100">
+      <div class="table-card-header">
+        <div class="table-card-title">Semester Summary</div>
+      </div>
+      <table class="table table-hover mb-0">
+        <thead><tr><th>Sem</th><th>Subjects</th><th>Avg</th><th>Passed</th></tr></thead>
+        <tbody>
+          {% for sem in sem_summary %}
+          <tr>
+            <td class="fw-600">{{ sem.semester }}</td>
+            <td>{{ sem.total }}</td>
+            <td>{{ sem.avg|floatformat:1 }}</td>
+            <td>
+              <span class="badge {% if sem.passes == sem.total %}bg-success{% elif sem.passes > 0 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                {{ sem.passes }}/{{ sem.total }}
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-3">No data yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Full results table -->
+<div class="table-card mb-4 fade-up fade-up-4">
+  <div class="table-card-header">
+    <div class="table-card-title"><i class="bi bi-table me-2"></i>All My Results</div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'results:export_csv' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-filetype-csv me-1"></i>CSV
+      </a>
+      <a href="{% url 'results:export_pdf' %}" class="btn btn-sm btn-primary">
+        <i class="bi bi-file-pdf me-1"></i>PDF Report
+      </a>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>Subject</th><th>Code</th><th>Semester</th><th>Marks</th><th>Grade</th><th>Status</th><th>Batch</th></tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td class="fw-500">{{ r.subject.name }}</td>
+          <td><code>{{ r.subject.code }}</code></td>
+          <td>{{ r.semester }}</td>
+          <td>
+            <span class="fw-700">{{ r.marks_obtained }}</span>
+            <span class="text-muted small">/{{ r.subject.max_marks }}</span>
+          </td>
+          <td><span class="grade-badge grade-{{ r.grade }}">{{ r.grade }}</span></td>
+          <td>
+            <span class="badge {% if r.is_pass %}bg-success{% else %}bg-danger{% endif %}">
+              {% if r.is_pass %}Pass{% else %}Fail{% endif %}
+            </span>
+          </td>
+          <td class="text-muted small">{{ r.batch.name }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-5">
+            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+            No results available yet. Please contact your faculty.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  EduPulse.loadChart("{% url 'analytics:chart_student_trend' %}", 'chart-my-trend', 'LineChart',
+    {curveType:'function', pointSize:6, vAxis:{minValue:0, maxValue:100}});
+</script>
+{% endblock %}

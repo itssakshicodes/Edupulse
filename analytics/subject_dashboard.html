@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Subject Analysis{% endblock %}
+{% block page_title %}Subject Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>Subject-Level Analysis</h1>
+  <p>Performance breakdown per subject across all batches.</p>
+</div>
+
+<!-- Subject cards grid -->
+<div class="row g-3 mb-4 fade-up fade-up-2">
+  {% for s in subjects %}
+  <div class="col-sm-6 col-xl-4">
+    <div class="chart-card h-100">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <div class="fw-700" style="font-size:15px;color:var(--navy)">{{ s.name }}</div>
+          <code class="small text-muted">{{ s.code }}</code>
+          <span class="badge bg-light text-muted border ms-1 small">Sem {{ s.semester }}</span>
+        </div>
+        {% if s.avg_marks %}
+        <div class="text-end">
+          <div class="fw-700" style="font-size:22px;color:var(--navy-light)">{{ s.avg_marks }}</div>
+          <div class="text-muted" style="font-size:10px">avg marks</div>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if s.total %}
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small mb-1">
+          <span class="text-muted">Pass Rate</span>
+          {% if s.total %}
+          {% widthratio s.passes s.total 100 as rate %}
+          <span class="fw-600">{{ rate }}%</span>
+          {% endif %}
+        </div>
+        <div class="perf-bar-wrap">
+          <div class="perf-bar" style="width:{% widthratio s.passes s.total 100 %}%"></div>
+        </div>
+      </div>
+      <div class="row text-center mt-3">
+        <div class="col-4">
+          <div class="fw-700 text-success">{{ s.passes }}</div>
+          <div class="text-muted" style="font-size:11px">Passed</div>
+        </div>
+        <div class="col-4">
+          <div class="fw-700 text-danger">{{ s.fails }}</div>
+          <div class="text-muted" style="font-size:11px">Failed</div>
+        </div>
+        <div class="col-4">
+          <div class="fw-700 text-primary">{{ s.total }}</div>
+          <div class="text-muted" style="font-size:11px">Total</div>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted small text-center py-3">No results uploaded yet</p>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-book display-4 d-block mb-3"></i>
+      No subjects found. <a href="{% url 'results:subject_create' %}">Add a subject</a>.
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4 fade-up fade-up-3">
+  <div class="col-12">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Average Marks per Subject</div>
+      </div>
+      <div id="chart-subj-bar" style="height:320px"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  EduPulse.loadChart("{% url 'analytics:chart_subject_comparison' %}", 'chart-subj-bar', 'BarChart', {
+    legend: 'none',
+    colors: ['#00b4d8'],
+  });
+</script>
+{% endblock %}

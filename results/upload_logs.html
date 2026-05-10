@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Upload Logs{% endblock %}
+{% block page_title %}Upload Logs{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>Upload History</h1>
+  <p>Audit trail for all CSV/Excel imports (last 50).</p>
+</div>
+
+<div class="table-card fade-up fade-up-2">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>File</th><th>Uploaded By</th><th>Total</th><th>Success</th><th>Errors</th><th>Status</th><th>Date & Time</th></tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>
+            <i class="bi bi-file-earmark-spreadsheet text-success me-1"></i>
+            <span class="fw-500">{{ log.file_name }}</span>
+          </td>
+          <td>{{ log.uploaded_by.username|default:"—" }}</td>
+          <td>{{ log.total_rows }}</td>
+          <td class="text-success fw-600">{{ log.success_rows }}</td>
+          <td>
+            {% if log.error_rows %}
+            <span class="text-danger fw-600">{{ log.error_rows }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <span class="badge {% if log.status == 'success' %}bg-success{% elif log.status == 'partial' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+              {{ log.status|capfirst }}
+            </span>
+          </td>
+          <td class="text-muted small">{{ log.uploaded_at|date:"N j, Y — H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-5">
+            <i class="bi bi-inbox display-6 d-block mb-2"></i>No uploads yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

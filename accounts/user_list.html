@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>User Management</h1>
+  <p>Create and manage all platform users.</p>
+</div>
+
+<!-- Filter + actions -->
+<div class="d-flex gap-2 mb-4 flex-wrap fade-up fade-up-2">
+  <form method="get" class="d-flex gap-2 flex-wrap align-items-center">
+    <select name="role" class="form-select form-select-sm" onchange="this.form.submit()" style="width:160px">
+      <option value="">All Roles</option>
+      {% for val, label in roles %}
+      <option value="{{ val }}" {% if role_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <a href="{% url 'accounts:user_create' %}" class="btn btn-sm btn-primary ms-auto">
+    <i class="bi bi-person-plus me-1"></i>Add User
+  </a>
+</div>
+
+<div class="table-card fade-up fade-up-3">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>#</th><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Department</th><th>Roll No.</th><th>Joined</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="text-muted small">{{ forloop.counter }}</td>
+          <td class="fw-600"><i class="bi bi-person me-1 text-muted"></i>{{ u.username }}</td>
+          <td>{{ u.get_full_name|default:"—" }}</td>
+          <td class="text-muted small">{{ u.email|default:"—" }}</td>
+          <td>
+            <span class="badge-role-{{ u.profile.role|default:'student' }}" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">
+              {{ u.profile.get_role_display|default:"Student" }}
+            </span>
+          </td>
+          <td class="text-muted small">{{ u.profile.department|default:"—" }}</td>
+          <td><code>{{ u.profile.roll_number|default:"—" }}</code></td>
+          <td class="text-muted small">{{ u.date_joined|date:"M d, Y" }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{% url 'accounts:user_edit' u.pk %}" class="btn btn-xs btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+              {% if u != request.user %}
+              <a href="{% url 'accounts:user_delete' u.pk %}" class="btn btn-xs btn-outline-danger"><i class="bi bi-trash"></i></a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-center text-muted py-5">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<style>.btn-xs{padding:2px 8px;font-size:12px;}</style>
+{% endblock %}

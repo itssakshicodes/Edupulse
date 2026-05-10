@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}HOD Dashboard{% endblock %}
+{% block page_title %}Management Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up fade-up-1">
+  <h1>Institution Overview</h1>
+  <p>High-level analytics across all departments.</p>
+</div>
+
+<div class="row g-3 mb-4 fade-up fade-up-2">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-file-earmark-bar-graph"></i></div>
+      <div>
+        <div class="stat-label">Total Results</div>
+        <div class="stat-value">{{ total_results }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+      <div>
+        <div class="stat-label">Pass Rate</div>
+        <div class="stat-value">{{ pass_rate }}%</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon navy"><i class="bi bi-graph-up-arrow"></i></div>
+      <div>
+        <div class="stat-label">Institution Avg</div>
+        <div class="stat-value">{{ avg_marks }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon red"><i class="bi bi-exclamation-triangle"></i></div>
+      <div>
+        <div class="stat-label">Failed Results</div>
+        <div class="stat-value">{{ fail_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4 fade-up fade-up-3">
+  <div class="col-lg-5">
+    <div class="chart-card h-100">
+      <div class="chart-card-header"><div class="chart-card-title">Pass vs Fail</div></div>
+      <div id="chart-pf" style="height:280px"></div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="chart-card h-100">
+      <div class="chart-card-header"><div class="chart-card-title">Semester Performance Trend</div></div>
+      <div id="chart-trend" style="height:280px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4 fade-up fade-up-4">
+  <div class="col-12">
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-card-title">Subject Comparison (Top 15)</div></div>
+      <div id="chart-subj" style="height:300px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Department breakdown -->
+<div class="table-card mb-4 fade-up fade-up-4">
+  <div class="table-card-header">
+    <div class="table-card-title"><i class="bi bi-building me-2"></i>Department Breakdown</div>
+    <a href="{% url 'results:export_csv' %}" class="btn btn-sm btn-outline-success">
+      <i class="bi bi-download me-1"></i>Export
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Department</th><th>Total Results</th><th>Avg Marks</th><th>Pass Rate</th></tr></thead>
+      <tbody>
+        {% for dept in dept_stats %}
+        <tr>
+          <td class="fw-500">{{ dept.subject__department|default:"—" }}</td>
+          <td>{{ dept.total }}</td>
+          <td>{{ dept.avg|floatformat:1 }}</td>
+          <td>
+            {% if dept.total %}
+            {% widthratio dept.passes dept.total 100 as rate %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="perf-bar-wrap flex-grow-1"><div class="perf-bar" style="width:{{ rate }}%"></div></div>
+              <span class="small fw-600">{{ rate }}%</span>
+            </div>
+            {% else %}&mdash;{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-4">No data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  EduPulse.loadChart("{% url 'analytics:chart_pass_fail' %}",          'chart-pf',    'PieChart',  {pieHole:0.4});
+  EduPulse.loadChart("{% url 'analytics:chart_semester_trend' %}",     'chart-trend', 'LineChart', {curveType:'function'});
+  EduPulse.loadChart("{% url 'analytics:chart_subject_comparison' %}", 'chart-subj',  'BarChart',  {});
+</script>
+{% endblock %}

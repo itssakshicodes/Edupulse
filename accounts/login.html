@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+
+{% block auth_content %}
+<div class="login-page">
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="login-logo fade-up fade-up-1">
+      <div class="login-logo-icon"><i class="bi bi-graph-up-arrow"></i></div>
+      <h1>EduPulse</h1>
+      <p>Academic Intelligence Platform</p>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
+      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Login form -->
+    <form method="post" class="fade-up fade-up-2">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+        <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}
+        <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <button type="submit" class="btn btn-primary w-100 btn-lg fw-600">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+      </button>
+    </form>
+
+    <p class="text-center text-muted mt-4 small fade-up fade-up-3">
+      © 2026 EduPulse &mdash; For authorized users only
+    </p>
+  </div>
+</div>
+{% endblock %}
